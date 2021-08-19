@@ -75,7 +75,7 @@ class InterviewQuestionsView(APIView):
         """
         interview = Interview.objects.get(id=interview_id)
         question_set = interview.question_set
-        questions = question_set.question_set
+        questions = Question.objects.filter(question_set=question_set)
         serializer = QuestionWithAnswerVariantsSerializer(questions, many=True)
         return Response(serializer.data)
 
@@ -144,26 +144,6 @@ class UserInterviewsView(APIView):
         serializer = InterviewQuestionsWithAnswersSerializer(interviews, many=True)
         return Response(serializer.data)
 
-""""
-НАЧАЛО
-Проба написать индивидуальный вывод так, чтобы самому странслировать все данные и по хуй что страшно выглядит
-"""
-# class UserInterviewsManualView(APIView):
-#     def get(self, request, interviewee_id):
-#         # Если interviewee_id = 0, то проверяем авторизацию
-#         if interviewee_id==0:
-#             if not request.user.is_authenticated:
-#                 raise PermissionDenied
-#             else:
-#                 interviews = Interview.objects.filter(loggedin_user=request.user)
-#         else:
-#             interviews = Interview.objects.filter(interviewee_id=interviewee_id)
-#         serializer = InterviewQuestionsWithAnswersSerializer(interviews, many=True)
-#         return Response(serializer.data)
-""""
-КОНЕЦ
-"""
-
 class QuestionSetViewSet(viewsets.ModelViewSet):
     """
     CRUD для QuestionSet. Только для админов
@@ -171,14 +151,6 @@ class QuestionSetViewSet(viewsets.ModelViewSet):
     queryset = QuestionSet.objects.all()
     serializer_class = QuestionSetSerializer
     permission_classes = [permissions.IsAdminUser]
-
-# class AnswerVariantViewSet(viewsets.ModelViewSet):
-#     """
-#     CRUD для Question. Только для админов
-#     """
-#     queryset = AnswerVariant.objects.all()
-#     serializer_class = AnswerVariantSerializer
-#     permission_classes = [permissions.IsAdminUser]
 
 class QuestionViewSet(viewsets.ModelViewSet):
     """
