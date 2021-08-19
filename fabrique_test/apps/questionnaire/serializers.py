@@ -3,14 +3,6 @@ from rest_framework import serializers
 from rest_framework.relations import SlugRelatedField
 from .models import Answer, Interview, QuestionSet, Question, AnswerVariant
 from django.core.exceptions import PermissionDenied
-import logging
-logger = logging.getLogger('my_debuger')
-# class QuestionSetSerializer(serializers.Serializer):
-#     id = serializers.IntegerField()
-#     title = serializers.CharField()
-#     description = serializers.CharField()
-#     start_date = serializers.DateTimeField()
-#     end_date = serializers.DateTimeField()
 
 class QuestionSetSerializer(serializers.ModelSerializer):
     """
@@ -30,19 +22,6 @@ class QuestionSetSerializer(serializers.ModelSerializer):
                 "Запрет на изменение даты старта опроса после создания."
             )
         return value
-
-# class AnswerVariantSerializer(serializers.Serializer):
-#     class Meta:
-#         model = AnswerVariant
-#         fields = ['answer_text']
-
-# class VariantsListField(serializers.ListField):
-#     child = serializers.CharField()
-
-# class AnswerVariantsSerializer(serializers.ListSerializer):
-#     def create(self, validated_data):
-#         books = [Book(**item) for item in validated_data]
-#         return Book.objects.bulk_create(books)
 
 class AnswerVariantArraySerializer(serializers.SlugRelatedField):
     """
@@ -94,44 +73,29 @@ class QuestionWithAnswerVariantsSerializer(serializers.ModelSerializer):
             AnswerVariant.objects.bulk_create(answer_variants_array)
         return instance
 
-# class UserAnswersFieldSerializer(serializers.SlugRelatedField):
-#     class Meta:
-#         #list_serializer_class = FilteredUserAnswerListSerializer
-#         model = Answer
-#     def to_representation(self, data):
-#         #data = data.filter(user=self.context['request'].user, edition__hide=False)
-#         data = data.filter(answer_text__isnull=True)
-#         #data=None
-#         return super(UserAnswersFieldSerializer, self).to_representation(data)
-
-# class FilteredUserAnswerListField(serializers.ManyRelatedField):
-#     child = serializers.SlugRelatedField(read_only=True, slug_field='answer_text')
-#     def to_representation(self, data):
-#         #data = data.filter(user=self.context['request'].user, edition__hide=False)
-#         #data = data.filter(answer_text__isnull=True)
-#         #data=None
-#         return super(FilteredUserAnswerListField, self).to_representation(data)
-
 class FilteredUserAnswerListSerializer(serializers.ListSerializer):
+    """
+    Сериализатор списка сериализатора FilteredUserAnswerSerializer
+    """
     def to_representation(self, data):
-        #self.data
-        #data = data.filter(interview=interview)
-        #logger.error('%s\n\n' % type(self.parent.parent.parent.parent.instance))
-        #logger.error('%s\n\n' % self.parent.parent.parent.parent.get_fields())
-        logger.error('%s\n\n' % self.data)
-        #data = data.filter(user=self.context['request'].user, edition__hide=False)
+        # Здесь как-то надо отсеить результат, чтобы он ограничивался interview_id из
+        # InterviewQuestionsWithAnswersSerializer, но я пока не разобрался как
         return super(FilteredUserAnswerListSerializer, self).to_representation(data)
 
 class FilteredUserAnswerSerializer(serializers.ModelSerializer):
+    """
+    Сериализатор фильтрованных ответов пользователя для вывода в списке интервью для пользователя
+    """
     class Meta:
         list_serializer_class = FilteredUserAnswerListSerializer
         model = Answer
         fields = ["answer_text"]
 
 class UserQuestionSerializer(serializers.ModelSerializer):
-    #answers = UserAnswersFieldSerializer(many=True, read_only=True, slug_field='answer_text')
+    """
+    Сериализатор вопросов анкеты для вывода в списке интервью для пользователя
+    """
     answers = FilteredUserAnswerSerializer(many=True)
-    #answers = serializers.SlugRelatedField(many=True, read_only=True, slug_field='answer_text')
     class Meta:
         model = Question
         fields = ['id', 'question_text', 'answer_type', Answer.RELATED_NAME]
@@ -140,6 +104,9 @@ class UserQuestionSerializer(serializers.ModelSerializer):
         return super().to_representation(instance)
 
 class UserQuestionSetSerializer(serializers.ModelSerializer):
+    """
+    Сериализатор анкет для вывода в списке интервью для пользователя
+    """
     questions = UserQuestionSerializer(many=True)
     class Meta:
         model = QuestionSet
@@ -148,14 +115,12 @@ class UserQuestionSetSerializer(serializers.ModelSerializer):
 class InterviewQuestionsWithAnswersSerializer(serializers.ModelSerializer):
     question_set = UserQuestionSetSerializer()
     """
-    Сериализатор вывода интервью с вопросами из его списка вопросов
+    Сериализатор вывода интервью с вопросами и ответами пользователя
     """
     class Meta:
         model = Interview
         fields = ['id', 'start_date', 'question_set']
     
-
-
 class InterviewSerializer(serializers.ModelSerializer):
     """
     Сериализатор интервью
@@ -165,15 +130,8 @@ class InterviewSerializer(serializers.ModelSerializer):
         fields = ['id', 'interviewee_id', 'loggedin_user', 'start_date', 'question_set']
         read_only_fields = ['id']
 
-
-
-
 class InterviewQuestionAnswersSerializer(serializers.ModelSerializer):
     class Meta:
         model = Interview
         fields = ['interview', 'question', 'answers']
-# class InterviewSerializer(serializers.Serializer):
-#     id = serializers.IntegerField()
-#     interviewee_id = serializers.IntegerField()
-#     start_date = serializers.DateTimeField()
-#     #question_list_id = serializers.DjangoModelField()
+
